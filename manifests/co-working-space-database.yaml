@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: space-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: space-db
+  template:
+    metadata:
+      labels:
+        app: space-db
+    spec:
+      containers:
+        - name: space-db
+          image: postgres:12
+          ports:
+            - containerPort: 5432
+              name: space-port
+          envFrom:
+            - configMapRef:
+                name: space-management-config
+          volumeMounts:
+            - name: space-db-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: space-db-data
+          persistentVolumeClaim:
+            claimName: space-management-database-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: space-db
+spec:
+  selector:
+    app: space-db
+  ports:
+    - name: space-port
+      port: 5432
+      targetPort: 5432
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: space-management-database-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi

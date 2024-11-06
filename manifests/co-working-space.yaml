@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: space-management-config
+data:
+  POSTGRES_USER: "postgres"
+  POSTGRES_PASSWORD: "postgres"
+  DB_NAME: "space_management"
+  DB_HOST: "space-db.default.svc.cluster.local"
+  POSTGRES_DB: "space_management"
+
+  PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+  PGADMIN_DEFAULT_PASSWORD: "postgres"
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app-space-management
+  labels:
+    app: app
+    service: space-management
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: app
+      service: space-management
+  template:
+    metadata:
+      labels:
+        app: app
+        service: space-management
+    spec:
+      containers:
+      - name: app-space-management
+        image: tinnaung/fjtn-co-working-space-management:latest
+        ports:
+        - containerPort: 8080
+        envFrom:
+          - configMapRef:
+              name: space-management-config
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: app-space-management
+spec:
+  selector:
+    app: app
+    service: space-management
+  ports:
+    - port: 3022        
+      targetPort: 3022    

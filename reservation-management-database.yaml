@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reservation-db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reservation-db
+  template:
+    metadata:
+      labels:
+        app: reservation-db
+    spec:
+      containers:
+        - name: reservation-db
+          image: postgres:12
+          ports:
+            - containerPort: 5432
+              name: reservation-port
+          envFrom:
+            - configMapRef:
+                name: reservation-management-config
+          volumeMounts:
+            - name: reservation-db-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: reservation-db-data
+          persistentVolumeClaim:
+            claimName: reservation-management-database-data-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reservation-db
+spec:
+  selector:
+    app: reservation-db
+  ports:
+    - name: reservation-port
+      port: 5432
+      targetPort: 5432
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: reservation-management-database-data-pvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 512Mi
